@@ -1,5 +1,3 @@
-package src;
-
 /**
  * Created by Ivan on 5/10/2017.
  */

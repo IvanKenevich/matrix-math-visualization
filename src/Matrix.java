@@ -1,5 +1,3 @@
-package src;
-
 /**
  * This class represents a matrix whose
  * entries are stored in column-major order
