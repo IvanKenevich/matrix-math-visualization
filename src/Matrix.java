@@ -126,16 +126,20 @@ public class Matrix {
     }
 
     /**
-     * @param newColumn
-     * @return
+     * Creates a new matrix that is the copy of this matrix plus
+     * the column specified in the parameter.
+     * @param newColumn column to be added, in array format
+     * @return matrix with an extra column
      */
     public Matrix addColumn(float[] newColumn) {
         Matrix result = new Matrix(m, n + 1);
 
+        // copies all existing entries
         for (int col = 0; col < n; col++) {
             result.setColumn(col, this.getColumn(col));
         }
 
+        // adds the last (new) column
         result.setColumn(n, newColumn);
 
         return result;
