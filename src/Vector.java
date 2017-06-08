@@ -63,6 +63,13 @@ public class Vector {
     }
 
     /**
+     * @return entries of this vector in an array form
+     */
+    public float[] toFloatArray() {
+        return entries;
+    }
+
+    /**
      * Prints the vector in the terminal as a column of numbers.
      * Used primarily for testing.
      *

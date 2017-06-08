@@ -5,14 +5,13 @@ import java.awt.*;
 import java.util.ArrayList;
 
 /**
- * Created by Ivan on 5/2/2017.
+ * Main class.
  */
 public class Main {
     public static void main(String[] args) {
-        JFrame f = new JFrame("Graphics");
+        JFrame f = new JFrame("Ivan's 261 Project");
         f.setSize(Toolkit.getDefaultToolkit().getScreenSize());
-        VisualPanel visualPanel = new VisualPanel(f.getWidth(), f.getHeight());
-        f.add(visualPanel);
+        f.add(new VisualPanel(f.getWidth(), f.getHeight()));
         f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         f.setVisible(true);
     }

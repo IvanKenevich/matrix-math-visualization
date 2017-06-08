@@ -3,8 +3,6 @@ package src;
 /**
  * This class represents a matrix whose
  * entries are stored in column-major order
- *
- * Created by Ivan on 5/4/2017.
  */
 public class Matrix {
     public final int m;
@@ -69,8 +67,8 @@ public class Matrix {
     public static Matrix rotationMatrix(double angle) {
         angle = Math.toRadians(angle);
         return new Matrix(new float[][]{{(float) Math.cos(angle), (float) Math.sin(angle), 0},
-                                        {-(float) Math.sin(angle), (float) Math.cos(angle), 0},
-                                        {0, 0, 1}});
+                {-(float) Math.sin(angle), (float) Math.cos(angle), 0},
+                {0, 0, 1}});
     }
 
     /**
@@ -123,6 +121,26 @@ public class Matrix {
 
     public void setColumn(int index, Vector c) {
         values[index] = c.entries;
+    }
+
+    public void setColumn(int index, float[] column) {
+        values[index] = column;
+    }
+
+    /**
+     * @param newColumn
+     * @return
+     */
+    public Matrix addColumn(float[] newColumn) {
+        Matrix result = new Matrix(m, n + 1);
+
+        for (int col = 0; col < n; col++) {
+            result.setColumn(col, this.getColumn(col));
+        }
+
+        result.setColumn(n, newColumn);
+
+        return result;
     }
 
     public int[] getRow(int index) {
