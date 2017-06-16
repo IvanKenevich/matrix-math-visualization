@@ -1,5 +1,7 @@
+import java.util.InputMismatchException;
+
 /**
- * Created by Ivan on 5/10/2017.
+ * This class is a representation of a vector in any number of dimensions.
  */
 public class Vector {
     public final float[] entries;
@@ -11,8 +13,12 @@ public class Vector {
      * @param length number of entries in the vector
      */
     public Vector(int length) {
-        entries = new float[length];
-        this.length = length;
+        if (length >= 0) {
+            entries = new float[length];
+            this.length = length;
+        }
+        else
+            throw new InputMismatchException("Length of a vector has to be a non-negative number.");
     }
 
     /**
@@ -20,26 +26,28 @@ public class Vector {
      *
      * @param values array of values
      */
-    public Vector(float[] values) {
-        entries = values;
+    public Vector(float... values) {
         length = values.length;
+        entries = new float[length];
+
+        for (int i = 0; i < length; i++) {
+            entries[i] = values[i];
+        }
     }
 
     /**
      * Componentwise vector addition
      *
-     * @param x vector to be added
-     * @return this vector + x
+     * @param that vector to be added
      */
-    public Vector add(Vector x) {
-        Vector result = new Vector(length);
-        if (this.length == x.length) {
+    public void add(Vector that) {
+        if (this.length == that.length) {
             for (int i = 0; i < length; i++) {
-                result.entries[i] = this.entries[i] + x.entries[i];
+                this.entries[i] = this.entries[i] + that.entries[i];
             }
         } else
-            throw new ArithmeticException("Dimension mismatch. Attempted to add vectors of different lengths.");
-        return result;
+            throw new InputMismatchException("Dimension mismatch. Attempted to add vectors of different lengths: "
+                                            +this.length+" and "+that.length);
     }
 
     /**

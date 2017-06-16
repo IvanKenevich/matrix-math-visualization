@@ -9,11 +9,10 @@ import java.util.Random;
  * This class displays various matrix operations and handles user input.
  */
 public class VisualPanel extends JPanel implements MouseListener, MouseMotionListener, MouseWheelListener {
-    private final int width;
-    private final int height;
+    private final int width, height, xOffset, yOffset;
 
     private final float SCALING_FACTOR = 0.1f, ROTATION_AMOUNT = 5;
-    private boolean scalePointsWithZoom;
+    private boolean resizePointsWithZoom;
 
     private float mouseX, mouseY, previousMouseX, previousMouseY, pointRadius;
 
@@ -23,15 +22,12 @@ public class VisualPanel extends JPanel implements MouseListener, MouseMotionLis
         super(null);
         this.width = width;
         this.height = height;
-        pointRadius = 3;
-        scalePointsWithZoom = false;
+        // Because the origin of the graphics object is in the top left corner by default
+        xOffset = width / 2;
+        yOffset = height / 2;
 
+        // Start with an empty screen
         data = createRandomDataMatrix(0);
-
-        setFocusable(true);
-        addMouseListener(this);
-        addMouseMotionListener(this);
-        addMouseWheelListener(this);
 
         setupGUI();
     }
@@ -40,7 +36,7 @@ public class VisualPanel extends JPanel implements MouseListener, MouseMotionLis
         Matrix result = new Matrix(3, numberOfPoints);
         Random r = new Random();
         for (int col = 0; col < numberOfPoints; col++) {
-            result.setColumn(col, new float[]{r.nextInt(width) - width / 2, r.nextInt(height) - height / 2, 1});
+            result.setColumn(col, new Vector(r.nextInt(width) - xOffset, r.nextInt(height) - yOffset, 1));
         }
         return result;
     }
@@ -56,7 +52,7 @@ public class VisualPanel extends JPanel implements MouseListener, MouseMotionLis
 
         // for every column (point) in the data matrix
         for (float[] column : data.values) {
-            g.fillOval((int) ((column[0] + width / 2) - pointRadius), (int) ((column[1] + height / 2) - pointRadius),
+            g.fillOval((int) ((column[0] + xOffset) - pointRadius), (int) ((column[1] + yOffset) - pointRadius),
                     (int) (2 * pointRadius), (int) (2 * pointRadius));
         }
     }
@@ -64,7 +60,7 @@ public class VisualPanel extends JPanel implements MouseListener, MouseMotionLis
     public void mouseClicked(MouseEvent e) {
         // adds a new point where the mouse was clicked
         // does not interfere with dragging the points
-        data = data.addColumn(new float[]{e.getX() - width / 2, e.getY() - height / 2, 1});
+        data = data.addColumn(new Vector(e.getX() - xOffset, e.getY() - yOffset, 1));
         repaint();
     }
 
@@ -85,8 +81,8 @@ public class VisualPanel extends JPanel implements MouseListener, MouseMotionLis
     }
 
     public void mouseDragged(MouseEvent e) {
-        mouseX = e.getX() - width / 2;
-        mouseY = e.getY() - height / 2;
+        mouseX = e.getX() - xOffset;
+        mouseY = e.getY() - yOffset;
         float dx = mouseX - previousMouseX;
         float dy = mouseY - previousMouseY;
         previousMouseX = mouseX;
@@ -96,8 +92,8 @@ public class VisualPanel extends JPanel implements MouseListener, MouseMotionLis
     }
 
     public void mouseMoved(MouseEvent e) {
-        mouseX = e.getX() - width / 2;
-        mouseY = e.getY() - height / 2;
+        mouseX = e.getX() - xOffset;
+        mouseY = e.getY() - yOffset;
         previousMouseX = mouseX;
         previousMouseY = mouseY;
     }
@@ -112,35 +108,35 @@ public class VisualPanel extends JPanel implements MouseListener, MouseMotionLis
             if (e.getWheelRotation() > 0) {
                 // rotate clockwise by performing
                 // (From Origin)*(Rotate)*(To Origin)*(data)
-                data = Matrix.product(Matrix.product(transposeFromOrigin, Matrix.product(Matrix.rotationMatrix(ROTATION_AMOUNT), transposeToOrigin)),
+                data = Matrix.product(transposeFromOrigin, Matrix.rotationMatrix(ROTATION_AMOUNT), transposeToOrigin,
                         data);
             } else {
                 // rotate counterclockwise by performing
                 // (From Origin)*(Rotate)*(To Origin)*(data)
-                data = Matrix.product(Matrix.product(transposeFromOrigin, Matrix.product(Matrix.rotationMatrix(-ROTATION_AMOUNT), transposeToOrigin)),
+                data = Matrix.product(transposeFromOrigin, Matrix.rotationMatrix(-ROTATION_AMOUNT), transposeToOrigin,
                         data);
             }
         } else {
             if (e.getWheelRotation() > 0) {
                 // scale down by performing
                 // (From Origin)*(Scale)*(To Origin)*(data)
-                data = Matrix.product(Matrix.product(transposeFromOrigin, Matrix.product(Matrix.scalingMatrix(1 - SCALING_FACTOR), transposeToOrigin)),
+                data = Matrix.product(transposeFromOrigin, Matrix.scalingMatrix(1 - SCALING_FACTOR), transposeToOrigin,
                         data);
                 // scale the radius of the points by the same factor, if necessary
-                if (scalePointsWithZoom)
+                if (resizePointsWithZoom)
                     pointRadius *= 1 - SCALING_FACTOR;
                 else
-                    pointRadius = 3;
+                    pointRadius = 6;
             } else {
                 // scale up by performing
                 // (From Origin)*(Scale)*(To Origin)*(data)
-                data = Matrix.product(Matrix.product(transposeFromOrigin, Matrix.product(Matrix.scalingMatrix(1 + SCALING_FACTOR), transposeToOrigin)),
+                data = Matrix.product(transposeFromOrigin, Matrix.scalingMatrix(1 + SCALING_FACTOR), transposeToOrigin,
                         data);
                 // scale the radius of the points by the same factor, if necessary
-                if (scalePointsWithZoom)
+                if (resizePointsWithZoom)
                     pointRadius *= 1 + SCALING_FACTOR;
                 else
-                    pointRadius = 3;
+                    pointRadius = 6;
             }
         }
         repaint();
@@ -150,13 +146,26 @@ public class VisualPanel extends JPanel implements MouseListener, MouseMotionLis
      * Creates and arranges text and buttons.
      */
     private void setupGUI() {
+        // This initial value looks best on most screens
+        pointRadius = 6;
+        // No resizing by default
+        resizePointsWithZoom = false;
+
+        // Keyboard focus and listeners
+        setFocusable(true);
+        addMouseListener(this);
+        addMouseMotionListener(this);
+        addMouseWheelListener(this);
+
+        // UI Components
+
         JLabel addingPointsInfo = new JLabel();
         addingPointsInfo.setFont(addingPointsInfo.getFont().deriveFont(20.0f));
         addingPointsInfo.setText("Add new points by clicking LMB");
         addingPointsInfo.setSize(addingPointsInfo.getPreferredSize());
         addingPointsInfo.setLocation(0, 0);
         add(addingPointsInfo);
-        
+
         JLabel translationInfo = new JLabel();
         translationInfo.setFont(translationInfo.getFont().deriveFont(20.0f));
         translationInfo.setText("Drag by holding LMB");
@@ -198,16 +207,16 @@ public class VisualPanel extends JPanel implements MouseListener, MouseMotionLis
         });
         add(randomPointsButton);
 
-        JCheckBox scalePointsWithZoomBox = new JCheckBox("Scale points with zoom");
-        scalePointsWithZoomBox.setSize(scalePointsWithZoomBox.getPreferredSize());
-        scalePointsWithZoomBox.setLocation(0, randomPointsButton.getY() + randomPointsButton.getHeight());
-        scalePointsWithZoomBox.setBackground(Color.WHITE);
-        scalePointsWithZoomBox.setFocusable(false);
-        scalePointsWithZoomBox.addActionListener(e -> {
-            scalePointsWithZoom = !scalePointsWithZoom;
-            pointRadius = 3;
+        JCheckBox resizePointsWithZoomBox = new JCheckBox("Resize points with zoom");
+        resizePointsWithZoomBox.setSize(resizePointsWithZoomBox.getPreferredSize());
+        resizePointsWithZoomBox.setLocation(0, randomPointsButton.getY() + randomPointsButton.getHeight());
+        resizePointsWithZoomBox.setBackground(Color.WHITE);
+        resizePointsWithZoomBox.setFocusable(false);
+        resizePointsWithZoomBox.addActionListener(e -> {
+            resizePointsWithZoom = !resizePointsWithZoom;
+            pointRadius = 6;
             repaint();
         });
-        add(scalePointsWithZoomBox);
+        add(resizePointsWithZoomBox);
     }
 }

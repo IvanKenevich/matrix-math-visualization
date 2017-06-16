@@ -1,3 +1,5 @@
+import java.util.InputMismatchException;
+
 /**
  * This class represents a matrix whose
  * entries are stored in column-major order
@@ -14,21 +16,43 @@ public class Matrix {
      * @param n number of columns
      */
     public Matrix(int m, int n) {
-        values = new float[n][m];
-        this.m = m;
-        this.n = n;
+        if (m >= 0 && n >= 0) {
+            values = new float[n][m];
+            this.m = m;
+            this.n = n;
+        } else {
+            throw new InputMismatchException("Matrix has to have non-negative number of rows and columns");
+        }
     }
 
     /**
      * Constructor for a matrix, based on an array of values
      *
-     * @param values array of values that will become entries of the matrix
+     * @param columns columns in array form, separated by commas, that will become columns of the matrix
      */
-    public Matrix(float[][] values) {
-        this.values = values;
+    public Matrix(float[]... columns) {
+        m = columns[0].length; //number of rows
+        n = columns.length;    // number of columns
 
-        m = values[0].length; //number of rows
-        n = values.length;    // number of columns
+        values = new float[n][m];
+        for (int i = 0; i < n; i++) {
+            values[i] = columns[i];
+        }
+    }
+
+    /**
+     * Constructor for a matrix, based on an array of values
+     *
+     * @param columns columns in vector form, separated by commas, that will become columns of the matrix
+     */
+    public Matrix(Vector... columns) {
+        m = columns[0].length; //number of rows
+        n = columns.length;    // number of columns
+
+        values = new float[n][m];
+        for (int i = 0; i < n; i++) {
+            values[i] = columns[i].toFloatArray();
+        }
     }
 
     /**
@@ -78,8 +102,8 @@ public class Matrix {
      * @return product ab
      */
     public static Matrix product(Matrix a, Matrix b) {
-        Matrix result = new Matrix(a.m, b.n);
         if (a.n == b.m) {
+            Matrix result = new Matrix(a.m, b.n);
             //going through columns of b
             for (int i = 0; i < b.n; i++) {
                 //and multiplying each one by A
@@ -87,8 +111,25 @@ public class Matrix {
             }
             return result;
         } else {
-            throw new ArithmeticException("Dimension mismatch. Attempted to multiply matrices of improper size.");
+            throw new InputMismatchException("Dimension mismatch. Attempted to multiply matrices of improper size.");
         }
+    }
+
+    /**
+     * Product of any number of matrices implemented as
+     * ABCD...WXYZ = ABCD...WX(YZ) = ABCD...W(X(YZ))
+     *
+     * @param matrices matrices to be multiplied, separated by commas
+     * @return product ABC...Z
+     */
+    public static Matrix product(Matrix... matrices) {
+        // multiply the last two matrices first
+        Matrix result = Matrix.product(matrices[matrices.length - 2], matrices[matrices.length - 1]);
+        // multiply the result of that product by the next(preceding) matrix
+        for (int i = matrices.length - 3; i >= 0; i--) {
+            result = product(matrices[i], result);
+        }
+        return result;
     }
 
     /**
@@ -99,17 +140,17 @@ public class Matrix {
      * @return this matrix times x
      */
     public Vector times(Vector x) {
-        Vector result = new Vector(x.length);
         if (x.length == n) {
+            Vector result = new Vector(m);
             //going through entries of x
             for (int i = 0; i < x.length; i++) {
                 //multiplying each entry by corresponding column of the matrix
                 //and adding the results into a single vector
-                result = result.add(this.getColumn(i).scale(x.getEntry(i)));
+                result.add(this.getColumn(i).scale(x.getEntry(i)));
             }
             return result;
         } else {
-            throw new ArithmeticException("Dimension mismatch. Attempted to multiply matrix by a vector of improper length.");
+            throw new InputMismatchException("Dimension mismatch. Attempted to multiply matrix by a vector of improper length.");
         }
     }
 
@@ -128,6 +169,7 @@ public class Matrix {
     /**
      * Creates a new matrix that is the copy of this matrix plus
      * the column specified in the parameter.
+     *
      * @param newColumn column to be added, in array format
      * @return matrix with an extra column
      */
@@ -143,6 +185,10 @@ public class Matrix {
         result.setColumn(n, newColumn);
 
         return result;
+    }
+
+    public Matrix addColumn(Vector newColumn) {
+        return addColumn(newColumn.toFloatArray());
     }
 
     public int[] getRow(int index) {
