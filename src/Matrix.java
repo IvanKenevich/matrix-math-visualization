@@ -43,6 +43,35 @@ public class Matrix {
     /**
      * Constructor for a matrix, based on an array of values
      *
+     * @param isRowMajor whether the arrays are rows instead of columns
+     * @param columns columns in array form, separated by commas, that will become columns of the matrix
+     */
+    public Matrix(boolean isRowMajor, float[]... columns) {
+        if (isRowMajor) {
+            m = columns.length;
+            n = columns[0].length;
+
+            values = new float[n][m];
+            for (int row = 0; row < m; row++) {
+                for (int col = 0; col < n; col++) {
+                    values[col][row] = columns[row][col];
+                }
+            }
+        }
+        else {
+            m = columns[0].length; //number of rows
+            n = columns.length;    // number of columns
+
+            values = new float[n][m];
+            for (int i = 0; i < n; i++) {
+                values[i] = columns[i];
+            }
+        }
+    }
+
+    /**
+     * Constructor for a matrix, based on an array of values
+     *
      * @param columns columns in vector form, separated by commas, that will become columns of the matrix
      */
     public Matrix(Vector... columns) {
