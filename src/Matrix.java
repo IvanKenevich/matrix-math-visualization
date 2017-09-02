@@ -85,6 +85,23 @@ public class Matrix {
     }
 
     /**
+     * Creates an m by n matrix, filled with random values between 0 and 1
+     * @param m number of rows
+     * @param n number of columns
+     * @return a random m by n matrix
+     */
+    public static Matrix randomMatrix(int m, int n) {
+        Random random = new Random();
+        Matrix result = new Matrix(m,n);
+        for (int row = 0; row < m; row++) {
+            for (int col = 0; col < n; col++) {
+                result.values[col][row] = random.nextFloat();
+            }
+        }
+        return result;
+    }
+
+    /**
      * Creates a 2D homogeneous translation matrix
      *
      * @param dx translation in x
