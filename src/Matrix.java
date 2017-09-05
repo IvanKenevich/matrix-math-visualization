@@ -1,4 +1,6 @@
 import java.util.InputMismatchException;
+import java.util.Random;
+
 
 /**
  * This class represents a matrix whose
@@ -26,7 +28,7 @@ public class Matrix {
     }
 
     /**
-     * Constructor for a matrix, based on an array of values
+     * Constructor for a matrix from a list of column arrays
      *
      * @param columns columns in array form, separated by commas, that will become columns of the matrix
      */
@@ -41,30 +43,31 @@ public class Matrix {
     }
 
     /**
-     * Constructor for a matrix, based on an array of values
+     * Constructor for a matrix from a list of row arrays or column arrays
      *
-     * @param isRowMajor whether the arrays are rows instead of columns
-     * @param columns columns in array form, separated by commas, that will become columns of the matrix
+     * @param isRowMajor whether the arrays are rows instead of columns.
+     *                   If <code>false</code>, will construct a matrix
+     *                   from column arrays
+     * @param rows       rows in array form, separated by commas, that will become rows of the matrix
      */
-    public Matrix(boolean isRowMajor, float[]... columns) {
+    public Matrix(boolean isRowMajor, float[]... rows) {
         if (isRowMajor) {
-            m = columns.length;
-            n = columns[0].length;
+            m = rows.length;
+            n = rows[0].length;
 
             values = new float[n][m];
             for (int row = 0; row < m; row++) {
                 for (int col = 0; col < n; col++) {
-                    values[col][row] = columns[row][col];
+                    values[col][row] = rows[row][col];
                 }
             }
-        }
-        else {
-            m = columns[0].length; //number of rows
-            n = columns.length;    // number of columns
+        } else {
+            m = rows[0].length; //number of rows
+            n = rows.length;    // number of rows
 
             values = new float[n][m];
             for (int i = 0; i < n; i++) {
-                values[i] = columns[i];
+                values[i] = rows[i];
             }
         }
     }
@@ -86,13 +89,14 @@ public class Matrix {
 
     /**
      * Creates an m by n matrix, filled with random values between 0 and 1
+     *
      * @param m number of rows
      * @param n number of columns
      * @return a random m by n matrix
      */
     public static Matrix randomMatrix(int m, int n) {
         Random random = new Random();
-        Matrix result = new Matrix(m,n);
+        Matrix result = new Matrix(m, n);
         for (int row = 0; row < m; row++) {
             for (int col = 0; col < n; col++) {
                 result.values[col][row] = random.nextFloat();
@@ -197,6 +201,32 @@ public class Matrix {
             return result;
         } else {
             throw new InputMismatchException("Dimension mismatch. Attempted to multiply matrix by a vector of improper length.");
+        }
+    }
+
+    /**
+     * Interface for applying a certain function to
+     * all of the entries in the matrix.
+     * <p>
+     * Implement the <code>function</code> method to perform the
+     * desired operation.
+     */
+    public interface Vectorizer {
+        float function(float value);
+    }
+
+    /**
+     * Applies a certain operation to all the elements in the matrix.
+     *
+     * @param vectorizer implemetation of Vectorizer interface that
+     *                   can be easily made with a lambda expression:
+     *                   vectorize(value -> operation(value))
+     */
+    public void vectorize(Vectorizer vectorizer) {
+        for (int col = 0; col < n; col++) {
+            for (int row = 0; row < m; row++) {
+                values[col][row] = vectorizer.function(values[col][row]);
+            }
         }
     }
 
