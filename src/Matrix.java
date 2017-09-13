@@ -18,12 +18,56 @@ public class Matrix {
      * @param n number of columns
      */
     public Matrix(int m, int n) {
-        if (m >= 0 && n >= 0) {
+        if (m > 0 && n > 0) {
             values = new float[n][m];
             this.m = m;
             this.n = n;
         } else {
-            throw new InputMismatchException("Matrix has to have non-negative number of rows and columns");
+            throw new InputMismatchException("Matrix has to have a positive number of rows and columns. " +
+                    "Expected number of rows: >0  Provided number of rows: " + m + ".  Expected number of columns: >0  " +
+                    "Provided number of columns: " + n);
+        }
+    }
+
+    /**
+     * Constructor for a matrix from a list of values
+     *
+     * @param m                           number of rows
+     * @param n                           number of columns
+     * @param valuesPassedInRowMajorOrder whether values are listed in row-major order
+     * @param entries                     comma separated values for the matrix
+     */
+    public Matrix(int m, int n, boolean valuesPassedInRowMajorOrder, float... entries) {
+        if (m > 0 && n > 0) {
+            if (m * n == entries.length) {
+                values = new float[n][m];
+                this.m = m;
+                this.n = n;
+                if (valuesPassedInRowMajorOrder) {
+                    int i = 0;
+                    for (int row = 0; row < m; row++) {
+                        for (int col = 0; col < n; col++) {
+                            values[col][row] = entries[i];
+                            i++;
+                        }
+                    }
+                } else {
+                    int i = 0;
+                    for (int col = 0; col < n; col++) {
+                        for (int row = 0; row < m; row++) {
+                            values[col][row] = entries[i];
+                            i++;
+                        }
+                    }
+                }
+            } else {
+                throw new InputMismatchException("Number of entries provided doesn't match the expected number based on size. " +
+                        "Expected: " + m * n + "  Provided: " + entries.length);
+            }
+        } else {
+            throw new InputMismatchException("Matrix has to have a positive number of rows and columns. " +
+                    "Expected number of rows: >0  Provided number of rows: " + m + ".  Expected number of columns: >0  " +
+                    "Provided number of columns: " + n);
         }
     }
 
@@ -33,32 +77,42 @@ public class Matrix {
      * @param columns columns in array form, separated by commas, that will become columns of the matrix
      */
     public Matrix(float[]... columns) {
-        m = columns[0].length; //number of rows
-        n = columns.length;    // number of columns
+        m = columns[0].length;
+        n = columns.length;
 
         values = new float[n][m];
-        for (int i = 0; i < n; i++) {
-            values[i] = columns[i];
+        float[] column;
+        for (int col = 0; col < n; col++) {
+            if (((column = columns[col]).length) == m) {
+                values[col] = column;
+            } else {
+                throw new InputMismatchException("Columns provided to the constructor are not of uniform length.");
+            }
         }
     }
 
     /**
      * Constructor for a matrix from a list of row arrays or column arrays
      *
-     * @param isRowMajor whether the arrays are rows instead of columns.
-     *                   If <code>false</code>, will construct a matrix
-     *                   from column arrays
-     * @param rows       rows in array form, separated by commas, that will become rows of the matrix
+     * @param arraysPassedAreRows whether the arrays are rows instead of columns.
+     *                            If <code>false</code>, will construct a matrix
+     *                            from column arrays
+     * @param rows                rows in array form, separated by commas, that will become rows of the matrix
      */
-    public Matrix(boolean isRowMajor, float[]... rows) {
-        if (isRowMajor) {
+    public Matrix(boolean arraysPassedAreRows, float[]... rows) {
+        if (arraysPassedAreRows) {
             m = rows.length;
             n = rows[0].length;
 
             values = new float[n][m];
+            float[] r;
             for (int row = 0; row < m; row++) {
-                for (int col = 0; col < n; col++) {
-                    values[col][row] = rows[row][col];
+                if (((r = rows[row]).length) == n) {
+                    for (int col = 0; col < n; col++) {
+                        values[col][row] = r[col];
+                    }
+                } else {
+                    throw new InputMismatchException("Rows provided to the constructor are not of uniform length.");
                 }
             }
         } else {
@@ -66,8 +120,13 @@ public class Matrix {
             n = rows.length;    // number of rows
 
             values = new float[n][m];
-            for (int i = 0; i < n; i++) {
-                values[i] = rows[i];
+            float[] column;
+            for (int col = 0; col < n; col++) {
+                if (((column = rows[col]).length) == m) {
+                    values[col] = column;
+                } else {
+                    throw new InputMismatchException("Columns provided to the constructor are not of uniform length.");
+                }
             }
         }
     }
@@ -83,7 +142,11 @@ public class Matrix {
 
         values = new float[n][m];
         for (int i = 0; i < n; i++) {
-            values[i] = columns[i].toFloatArray();
+            if (columns[i].length == m) {
+                values[i] = columns[i].entries;
+            } else {
+                throw new InputMismatchException("Vectors provided to the constructor are not of uniform length.");
+            }
         }
     }
 
@@ -141,6 +204,78 @@ public class Matrix {
         return new Matrix(new float[][]{{(float) Math.cos(angle), (float) Math.sin(angle), 0},
                 {-(float) Math.sin(angle), (float) Math.cos(angle), 0},
                 {0, 0, 1}});
+    }
+
+    /**
+     * Matrix addition
+     *
+     * @param a first summand
+     * @param b second summand
+     * @return componentwise sum of the two parameters
+     */
+    public static Matrix add(Matrix a, Matrix b) {
+        if ((a.m == b.m) && (a.n == b.n)) {
+            Matrix result = new Matrix(a.m, a.n);
+            result.add(a);
+            result.add(b);
+            return result;
+        } else {
+            throw new InputMismatchException("Dimension mismatch. Attempted to add matrices of different sizes.");
+        }
+    }
+
+    /**
+     * Adds a matrix to this matrix
+     *
+     * @param a matrix to be added
+     */
+    public void add(Matrix a) {
+        if ((a.m == m) && (a.n == n)) {
+            for (int col = 0; col < n; col++) {
+                for (int row = 0; row < m; row++) {
+                    values[col][row] += a.values[col][row];
+                }
+            }
+        } else {
+            throw new InputMismatchException("Dimension mismatch. Attempted to add matrices of different sizes.");
+        }
+
+    }
+
+    /**
+     * Matrix subtraction
+     *
+     * @param a minuend
+     * @param b subtrahend
+     * @return componentwise difference of the two parameters
+     */
+    public static Matrix subtract(Matrix a, Matrix b) {
+        if ((a.m == b.m) && (a.n == b.n)) {
+            Matrix result = new Matrix(a.m, a.n);
+            result.add(a);
+            result.subtract(b);
+            return result;
+        } else {
+            throw new InputMismatchException("Dimension mismatch. Attempted to subtract matrices of different sizes.");
+        }
+    }
+
+    /**
+     * Subtracts a matrix from this matrix
+     *
+     * @param a matrix to be subtracted
+     */
+    public void subtract(Matrix a) {
+        if ((a.m == m) && (a.n == n)) {
+            for (int col = 0; col < n; col++) {
+                for (int row = 0; row < m; row++) {
+                    values[col][row] -= a.values[col][row];
+                }
+            }
+        } else {
+            throw new InputMismatchException("Dimension mismatch. Attempted to subtract matrices of different sizes.");
+        }
+
     }
 
     /**
@@ -220,7 +355,7 @@ public class Matrix {
      *
      * @param vectorizer implemetation of Vectorizer interface that
      *                   can be easily made with a lambda expression:
-     *                   vectorize(value -> operation(value))
+     *                   <code>vectorize(value -> operation(value))</code>
      */
     public void vectorize(Vectorizer vectorizer) {
         for (int col = 0; col < n; col++) {
