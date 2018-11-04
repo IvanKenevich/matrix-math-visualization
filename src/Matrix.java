@@ -10,7 +10,10 @@ public class Matrix {
     public final int m;
     public final int n;
     public final float[][] values;
+    public final float epsilon = 0.00001f;
 
+
+    // ================== CONSTRUCTORS BEGIN ==================
     /**
      * Constructor for an empty generic matrix.
      *
@@ -150,6 +153,12 @@ public class Matrix {
         }
     }
 
+    // ================== CONSTRUCTORS END ==================
+
+
+
+    // ================== SPECIAL MATRICES BEGIN ==================
+
     /**
      * Creates an m by n matrix, filled with random values between 0 and 1
      *
@@ -206,23 +215,10 @@ public class Matrix {
                 {0, 0, 1}});
     }
 
-    /**
-     * Matrix addition
-     *
-     * @param a first summand
-     * @param b second summand
-     * @return componentwise sum of the two parameters
-     */
-    public static Matrix add(Matrix a, Matrix b) {
-        if ((a.m == b.m) && (a.n == b.n)) {
-            Matrix result = new Matrix(a.m, a.n);
-            result.add(a);
-            result.add(b);
-            return result;
-        } else {
-            throw new InputMismatchException("Dimension mismatch. Attempted to add matrices of different sizes.");
-        }
-    }
+    // ================== SPECIAL MATRICES END ==================
+
+
+    // ================== ARITHMETIC BEGIN ==================
 
     /**
      * Adds a matrix to this matrix
@@ -243,20 +239,20 @@ public class Matrix {
     }
 
     /**
-     * Matrix subtraction
+     * Matrix addition
      *
-     * @param a minuend
-     * @param b subtrahend
-     * @return componentwise difference of the two parameters
+     * @param a first summand
+     * @param b second summand
+     * @return componentwise sum of the two parameters
      */
-    public static Matrix subtract(Matrix a, Matrix b) {
+    public static Matrix add(Matrix a, Matrix b) {
         if ((a.m == b.m) && (a.n == b.n)) {
             Matrix result = new Matrix(a.m, a.n);
             result.add(a);
-            result.subtract(b);
+            result.add(b);
             return result;
         } else {
-            throw new InputMismatchException("Dimension mismatch. Attempted to subtract matrices of different sizes.");
+            throw new InputMismatchException("Dimension mismatch. Attempted to add matrices of different sizes.");
         }
     }
 
@@ -276,6 +272,24 @@ public class Matrix {
             throw new InputMismatchException("Dimension mismatch. Attempted to subtract matrices of different sizes.");
         }
 
+    }
+
+    /**
+     * Matrix subtraction
+     *
+     * @param a minuend
+     * @param b subtrahend
+     * @return componentwise difference of the two parameters
+     */
+    public static Matrix subtract(Matrix a, Matrix b) {
+        if ((a.m == b.m) && (a.n == b.n)) {
+            Matrix result = new Matrix(a.m, a.n);
+            result.add(a);
+            result.subtract(b);
+            return result;
+        } else {
+            throw new InputMismatchException("Dimension mismatch. Attempted to subtract matrices of different sizes.");
+        }
     }
 
     /**
@@ -339,6 +353,128 @@ public class Matrix {
         }
     }
 
+    // ================== ARITHMETIC END ==================
+
+
+    // ================== RREF BEGIN ==================
+
+    /**
+     * Finds the largest pivot position for the given column.
+     * Largest is used to minimize roundoff errors, in a process called partial pivoting.
+     * @param start_row row to start looking for the pivot
+     * @param end_row row to end looking for the pivot
+     * @param column column in which the pivot is sought
+     * @return the index of the pivot row
+     */
+    private int partial_pivot(int start_row, int end_row, int column) {
+        int max = start_row;
+        for (int i = start_row; i <= end_row; i++) {
+            if (Math.abs(values[column][i]) > Math.abs(values[column][max])) { max = i; }
+        }
+        return max;
+    }
+
+    /**
+     * Swaps two rows
+     * @param a index 1
+     * @param b index 2
+     */
+    private void swap_rows(int a, int b) {
+        if (a < 0 || b < 0) { throw new IllegalArgumentException("One of the rows to be swapped has a negative index"); }
+        if (a >= m || b >= m) { throw new IllegalArgumentException("One of the rows to be swapped has a too high index"); }
+
+        float [] temp = getRow(b);
+
+        setRow(b,getRow(a));
+        setRow(a,temp);
+    }
+
+    public void echelon() {
+        int h = 0; // row
+        int k = 0; // col
+        int i_max; // row
+        float f;
+        while (h < m && k < n) {
+            i_max = partial_pivot(h,m-1,k);
+
+            if (Math.abs(values[k][i_max]) < epsilon ) {
+                ++k;
+            }
+            else {
+                swap_rows(h,i_max);
+
+                for (int i = h + 1; i < m; i++) {
+                    f = values[k][i] / values[k][h];
+                    values[k][i] = 0;
+                    for (int j = k + 1; j < n; j++) {
+                        values[j][i] = values[j][i] - values[j][h] * f;
+                    }
+                }
+                ++h; ++k;
+            }
+        }
+    }
+
+    /**
+     * Finds the rightmost pivot column in a given row
+     * @param row row to search for the pivot in
+     * @return index of the pivot column
+     */
+    private int rightmost_pivot_column(int row) {
+        int col = 0;
+        while (col < n && Math.abs(values[col][row]) < epsilon) ++col;
+        return col;
+    }
+
+    /**
+     * Row reduces the matrix, replacing the old values.
+     *
+     * First, brings the matrix to an echelon form.
+     * Then, beginning with the rightmost pivot and working upward and to the left,
+     * creates zeroes above each pivot. If a pivot is not 1, makes it 1 by a scaling operation.
+     */
+    public void reduce() {
+        echelon();
+
+        int h = m - 1; // row
+        int k;         // col
+        float f;
+        while (h >= 0) {
+            k = rightmost_pivot_column(h);
+
+            if (Math.abs(values[k][h]) < epsilon) {
+                --h;
+            }
+            else {
+                if (h > 0) { // if this is not the first row
+                    // create zeroes above this pivot
+                    for (int i = h - 1; i >= 0; i--) {
+                        f = values[k][i] / values[k][h];
+                        values[k][i] = 0;
+                        for (int j = k + 1; j < n; j++) {
+                            values[j][i] = values[j][i] - values[j][h] * f;
+                        }
+                    }
+                }
+                // if a pivot is not 1, make it 1 by a scaling operation
+                if (Math.abs(1 - values[k][h]) > epsilon) {
+                    f = values[k][h];
+                    values[k][h] = 1;
+                    for (int j = k+1; j < n; j++) {
+                        values[j][h]/=f;
+                    }
+                }
+
+                --h;
+            }
+        }
+    }
+
+    // ================== RREF END ==================
+
+
+    // ================== VECTORIZER BEGIN ==================
+
     /**
      * Interface for applying a certain function to
      * all of the entries in the matrix.
@@ -365,6 +501,11 @@ public class Matrix {
         }
     }
 
+    // ================== VECTORIZER END ==================
+
+
+    // ================== GET/SET BEGIN ==================
+
     public Vector getColumn(int index) {
         return new Vector(values[index]);
     }
@@ -376,6 +517,30 @@ public class Matrix {
     public void setColumn(int index, float[] column) {
         values[index] = column;
     }
+
+
+    public float[] getRow(int index) {
+        float[] result = new float[n];
+        for (int i = 0; i < n; i++) {
+            result[i] = values[i][index];
+        }
+        return result;
+    }
+
+    public void setRow(int index, float [] row) {
+        for (int i = 0; i < n; i++) {
+            values[i][index] = row[i];
+        }
+    }
+
+    public float getEntry(int row, int column) {
+        return values[column][row];
+    }
+
+    // ================== GET/SET END ==================
+
+
+    // ================== GROW BEGIN ==================
 
     /**
      * Creates a new matrix that is the copy of this matrix plus
@@ -402,17 +567,10 @@ public class Matrix {
         return addColumn(newColumn.toFloatArray());
     }
 
-    public int[] getRow(int index) {
-        int[] result = new int[n];
-        for (int i = 0; i < n; i++) {
-            result[i] = (int) values[i][index];
-        }
-        return result;
-    }
+    // ================== GROW END ==================
 
-    public float getEntry(int row, int column) {
-        return values[column][row];
-    }
+
+    // ================== TO STRING BEGIN ==================
 
     /**
      * Prints the matrix in a terminal as a block of numbers.
@@ -424,10 +582,12 @@ public class Matrix {
         StringBuilder result = new StringBuilder();
         for (int row = 0; row < values[0].length; row++) {
             for (int col = 0; col < values.length; col++) {
-                result.append(values[col][row]).append(" ");
+                result.append(String.format("%-8.2f ",values[col][row]));
             }
             result.append("\n");
         }
         return result.toString();
     }
+
+    // ================== TO STRING END ==================
 }

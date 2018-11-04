@@ -27,7 +27,7 @@ public class VisualPanel extends JPanel implements MouseListener, MouseMotionLis
         yOffset = height / 2;
 
         // Start with an empty screen
-        data = createRandomDataMatrix(0);
+        data = createRandomDataMatrix(30000);
 
         setupGUI();
     }
@@ -48,9 +48,11 @@ public class VisualPanel extends JPanel implements MouseListener, MouseMotionLis
 
     public void paintComponent(Graphics g) {
         // clears the screen
+        g.setColor(Color.WHITE);
         g.clearRect(0, 0, width, height);
 
         // for every column (point) in the data matrix
+        g.setColor(Color.BLACK);
         for (float[] column : data.values) {
             g.fillOval((int) ((column[0] + xOffset) - pointRadius), (int) ((column[1] + yOffset) - pointRadius),
                     (int) (2 * pointRadius), (int) (2 * pointRadius));
