@@ -135,6 +135,19 @@ public class Matrix {
     }
 
     /**
+     * Makes a matrix from another matrix.
+     * (Copy constructor-ish)
+     * @param mat matrix to be copied from
+     */
+    public Matrix(Matrix mat) {
+        m = mat.m; n = mat.n;
+        values = new float[n][m];
+        for (int col = 0; col < n; col++) {
+            if (m >= 0) System.arraycopy(mat.values[col], 0, values[col], 0, m);
+        }
+    }
+
+    /**
      * Constructor for a matrix, based on an array of values
      *
      * @param columns columns in vector form, separated by commas, that will become columns of the matrix
@@ -358,38 +371,7 @@ public class Matrix {
 
     // ================== RREF BEGIN ==================
 
-    /**
-     * Finds the largest pivot position for the given column.
-     * Largest is used to minimize roundoff errors, in a process called partial pivoting.
-     * @param start_row row to start looking for the pivot
-     * @param end_row row to end looking for the pivot
-     * @param column column in which the pivot is sought
-     * @return the index of the pivot row
-     */
-    private int partial_pivot(int start_row, int end_row, int column) {
-        int max = start_row;
-        for (int i = start_row; i <= end_row; i++) {
-            if (Math.abs(values[column][i]) > Math.abs(values[column][max])) { max = i; }
-        }
-        return max;
-    }
-
-    /**
-     * Swaps two rows
-     * @param a index 1
-     * @param b index 2
-     */
-    private void swap_rows(int a, int b) {
-        if (a < 0 || b < 0) { throw new IllegalArgumentException("One of the rows to be swapped has a negative index"); }
-        if (a >= m || b >= m) { throw new IllegalArgumentException("One of the rows to be swapped has a too high index"); }
-
-        float [] temp = getRow(b);
-
-        setRow(b,getRow(a));
-        setRow(a,temp);
-    }
-
-    public void echelon() {
+    public void to_echelon() {
         int h = 0; // row
         int k = 0; // col
         int i_max; // row
@@ -416,17 +398,6 @@ public class Matrix {
     }
 
     /**
-     * Finds the rightmost pivot column in a given row
-     * @param row row to search for the pivot in
-     * @return index of the pivot column
-     */
-    private int rightmost_pivot_column(int row) {
-        int col = 0;
-        while (col < n && Math.abs(values[col][row]) < epsilon) ++col;
-        return col;
-    }
-
-    /**
      * Row reduces the matrix, replacing the old values.
      *
      * First, brings the matrix to an echelon form.
@@ -434,13 +405,14 @@ public class Matrix {
      * creates zeroes above each pivot. If a pivot is not 1, makes it 1 by a scaling operation.
      */
     public void reduce() {
-        echelon();
+        to_echelon();
 
         int h = m - 1; // row
         int k;         // col
         float f;
         while (h >= 0) {
             k = rightmost_pivot_column(h);
+            // maybe make the above return -1 if no non-zeroes found?
 
             if (Math.abs(values[k][h]) < epsilon) {
                 --h;
@@ -456,6 +428,7 @@ public class Matrix {
                         }
                     }
                 }
+
                 // if a pivot is not 1, make it 1 by a scaling operation
                 if (Math.abs(1 - values[k][h]) > epsilon) {
                     f = values[k][h];
@@ -468,6 +441,17 @@ public class Matrix {
                 --h;
             }
         }
+    }
+
+    /**
+     * Create the reduced echelon form of the argument matrix
+     * @param m original matrix
+     * @return row reduced matrix
+     */
+    public static Matrix rref(Matrix m) {
+        Matrix result = new Matrix(m);
+        result.reduce();
+        return result;
     }
 
     // ================== RREF END ==================
@@ -537,6 +521,48 @@ public class Matrix {
         return values[column][row];
     }
 
+    /**
+     * Finds the largest pivot position for the given column.
+     * Largest is used to minimize roundoff errors, in a process called partial pivoting.
+     * @param start_row row to start looking for the pivot
+     * @param end_row row to end looking for the pivot
+     * @param column column in which the pivot is sought
+     * @return the index of the pivot row
+     */
+    private int partial_pivot(int start_row, int end_row, int column) {
+        int max = start_row;
+        for (int i = start_row; i <= end_row; i++) {
+            if (Math.abs(values[column][i]) > Math.abs(values[column][max])) { max = i; }
+        }
+        return max;
+    }
+
+    /**
+     * Swaps two rows
+     * @param a index 1
+     * @param b index 2
+     */
+    private void swap_rows(int a, int b) {
+        if (a < 0 || b < 0) { throw new IllegalArgumentException("One of the rows to be swapped has a negative index"); }
+        if (a >= m || b >= m) { throw new IllegalArgumentException("One of the rows to be swapped has a too high index"); }
+
+        float [] temp = getRow(b);
+
+        setRow(b,getRow(a));
+        setRow(a,temp);
+    }
+
+    /**
+     * Finds the rightmost pivot column in a given row
+     * @param row row to search for the pivot in
+     * @return index of the pivot column
+     */
+    private int rightmost_pivot_column(int row) {
+        int col = 0;
+        while (col < n && Math.abs(values[col][row]) < epsilon) ++col;
+        return col;
+    }
+
     // ================== GET/SET END ==================
 
 
@@ -582,7 +608,7 @@ public class Matrix {
         StringBuilder result = new StringBuilder();
         for (int row = 0; row < values[0].length; row++) {
             for (int col = 0; col < values.length; col++) {
-                result.append(String.format("%-8.2f ",values[col][row]));
+                result.append(String.format("% 8.2f ",values[col][row]));
             }
             result.append("\n");
         }
