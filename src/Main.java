@@ -16,8 +16,9 @@ public class Main {
                 1,1,1,1,1,1,1,1,0,1,2,3,0,1,2,3);
         Matrix m1 = new Matrix(3,6,true,0,3,-6,6,4,-5,3,-7,8,-5,8,9,3,-9,12,-9,6,15);
         Matrix m2 = new Matrix(3,4,true,0,1,-4,8,2,-3,2,1,4,-8,12,1);
-//        m0.to_echelon();
-        System.out.println(m0);
-        System.out.println(Matrix.rref(m0));
+
+        Matrix m3 = new Matrix(true, new float[]{1,2,3},new float[]{4,5,6},new float[]{7,8,9});
+        System.out.println(m3);
+//        System.out.println(Matrix.rref(m3));
     }
 }

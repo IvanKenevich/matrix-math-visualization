@@ -10,7 +10,7 @@ public class Matrix {
     public final int m;
     public final int n;
     public final float[][] values;
-    public final float epsilon = 0.00001f;
+    public final float epsilon = 0.00001f; // largest acceptable difference between two numbers for equality
 
 
     // ================== CONSTRUCTORS BEGIN ==================
@@ -89,7 +89,7 @@ public class Matrix {
             if (((column = columns[col]).length) == m) {
                 values[col] = column;
             } else {
-                throw new InputMismatchException("Columns provided to the constructor are not of uniform length.");
+                throw new IllegalArgumentException("Columns provided to the constructor are not of uniform length.");
             }
         }
     }
@@ -108,34 +108,48 @@ public class Matrix {
             n = rows[0].length;
 
             values = new float[n][m];
-            float[] r;
             for (int row = 0; row < m; row++) {
-                if (((r = rows[row]).length) == n) {
-                    for (int col = 0; col < n; col++) {
-                        values[col][row] = r[col];
-                    }
+                if (rows[row].length == n) {
+                    setRow(row, rows[row]);
                 } else {
-                    throw new InputMismatchException("Rows provided to the constructor are not of uniform length.");
+                    throw new IllegalArgumentException("Rows provided to the constructor are not of uniform length.");
                 }
             }
+//            float[] r;
+//            for (int row = 0; row < m; row++) {
+//                if (((r = rows[row]).length) == n) {
+//                    for (int col = 0; col < n; col++) {
+//                        values[col][row] = r[col];
+//                    }
+//                } else {
+//                    throw new IllegalArgumentException("Rows provided to the constructor are not of uniform length.");
+//                }
+//            }
         } else {
             m = rows[0].length; //number of rows
             n = rows.length;    // number of rows
-
             values = new float[n][m];
-            float[] column;
             for (int col = 0; col < n; col++) {
-                if (((column = rows[col]).length) == m) {
-                    values[col] = column;
+                if (rows[col].length == m) {
+                    setColumn(col, rows[col]);
                 } else {
-                    throw new InputMismatchException("Columns provided to the constructor are not of uniform length.");
+                    throw new IllegalArgumentException("Columns provided to the constructor are not of uniform length.");
                 }
             }
+//            values = new float[n][m];
+//            float[] column;
+//            for (int col = 0; col < n; col++) {
+//                if (((column = rows[col]).length) == m) {
+//                    values[col] = column;
+//                } else {
+//                    throw new IllegalArgumentException("Columns provided to the constructor are not of uniform length.");
+//                }
+//            }
         }
     }
 
     /**
-     * Makes a matrix from another matrix.
+     * Makes a matrix by copying another matrix.
      * (Copy constructor-ish)
      * @param mat matrix to be copied from
      */
@@ -148,7 +162,7 @@ public class Matrix {
     }
 
     /**
-     * Constructor for a matrix, based on an array of values
+     * Constructor for a matrix based on an array of values
      *
      * @param columns columns in vector form, separated by commas, that will become columns of the matrix
      */
@@ -161,7 +175,7 @@ public class Matrix {
             if (columns[i].length == m) {
                 values[i] = columns[i].entries;
             } else {
-                throw new InputMismatchException("Vectors provided to the constructor are not of uniform length.");
+                throw new IllegalArgumentException("Vectors provided to the constructor are not of uniform length.");
             }
         }
     }
@@ -206,7 +220,7 @@ public class Matrix {
     /**
      * Creates a 2D homogeneous scaling matrix
      *
-     * @param k scalar to scale by
+     * @param k factor to scale by
      * @return 3x3 scaling matrix
      */
     public static Matrix scalingMatrix(float k) {
@@ -218,7 +232,7 @@ public class Matrix {
     /**
      * Creates a 2D homogeneous rotation matrix.
      *
-     * @param angle the angle to rotate by
+     * @param angle the angle to rotate by IN DEGREES
      * @return 3x3 rotation matrix
      */
     public static Matrix rotationMatrix(double angle) {
@@ -246,7 +260,8 @@ public class Matrix {
                 }
             }
         } else {
-            throw new InputMismatchException("Dimension mismatch. Attempted to add matrices of different sizes.");
+            throw new IllegalArgumentException("Dimension mismatch. Attempted to add matrices of improper size:\n"+
+                    a.m + " by " + a.n + " and " + m + " by " + n);
         }
 
     }
@@ -256,7 +271,7 @@ public class Matrix {
      *
      * @param a first summand
      * @param b second summand
-     * @return componentwise sum of the two parameters
+     * @return elementwise sum of the two parameters
      */
     public static Matrix add(Matrix a, Matrix b) {
         if ((a.m == b.m) && (a.n == b.n)) {
@@ -265,7 +280,8 @@ public class Matrix {
             result.add(b);
             return result;
         } else {
-            throw new InputMismatchException("Dimension mismatch. Attempted to add matrices of different sizes.");
+            throw new IllegalArgumentException("Dimension mismatch. Attempted to add matrices of improper size:\n"+
+                    a.m + " by " + a.n + " and " + b.m + " by " + b.n);
         }
     }
 
@@ -282,7 +298,8 @@ public class Matrix {
                 }
             }
         } else {
-            throw new InputMismatchException("Dimension mismatch. Attempted to subtract matrices of different sizes.");
+            throw new IllegalArgumentException("Dimension mismatch. Attempted to subtract matrices of improper size:\n"+
+                    a.m + " by " + a.n + " and " + m + " by " + n);
         }
 
     }
@@ -292,7 +309,7 @@ public class Matrix {
      *
      * @param a minuend
      * @param b subtrahend
-     * @return componentwise difference of the two parameters
+     * @return elementwise difference of the two parameters
      */
     public static Matrix subtract(Matrix a, Matrix b) {
         if ((a.m == b.m) && (a.n == b.n)) {
@@ -301,7 +318,8 @@ public class Matrix {
             result.subtract(b);
             return result;
         } else {
-            throw new InputMismatchException("Dimension mismatch. Attempted to subtract matrices of different sizes.");
+            throw new IllegalArgumentException("Dimension mismatch. Attempted to subtract matrices of improper size:\n"+
+                    a.m + " by " + a.n + " and " + b.m + " by " + b.n);
         }
     }
 
@@ -323,7 +341,8 @@ public class Matrix {
             }
             return result;
         } else {
-            throw new InputMismatchException("Dimension mismatch. Attempted to multiply matrices of improper size.");
+            throw new IllegalArgumentException("Dimension mismatch. Attempted to multiply matrices of improper size:\n"+
+            a.m + " by " + a.n + " and " + b.m + " by " + b.n);
         }
     }
 
@@ -335,10 +354,15 @@ public class Matrix {
      * @return product ABC...Z
      */
     public static Matrix product(Matrix... matrices) {
+        int length = matrices.length;
+
+        if (length == 0) throw new IllegalArgumentException("Empty array of matrices to be multiplied");
+        if (length == 1) { return matrices[0]; }
+
         // multiply the last two matrices first
-        Matrix result = Matrix.product(matrices[matrices.length - 2], matrices[matrices.length - 1]);
+        Matrix result = Matrix.product(matrices[length - 2], matrices[length - 1]);
         // multiply the result of that product by the next(preceding) matrix
-        for (int i = matrices.length - 3; i >= 0; i--) {
+        for (int i = length - 3; i >= 0; i--) {
             result = product(matrices[i], result);
         }
         return result;
@@ -362,7 +386,8 @@ public class Matrix {
             }
             return result;
         } else {
-            throw new InputMismatchException("Dimension mismatch. Attempted to multiply matrix by a vector of improper length.");
+            throw new IllegalArgumentException("Dimension mismatch. Attempted to multiply matrix by a vector of improper length:\n"+
+                    m + " by " + n + " and " + x.length);
         }
     }
 
