@@ -4,8 +4,8 @@ import java.util.InputMismatchException;
  * This class is a representation of a vector in any number of dimensions.
  */
 public class Vector {
-    public final float[] entries;
-    public final int length;
+    protected final float[] entries;
+    protected final int length;
 
     /**
      * Constructs an empty vector of specific length
@@ -36,6 +36,19 @@ public class Vector {
     }
 
     /**
+     * Copy constructor
+     * @param v vector to copy from
+     */
+    public Vector(Vector v) {
+        length = v.length;
+        entries = new float[length];
+
+        for (int i = 0; i < length; i++) {
+            entries[i] = v.entries[i];
+        }
+    }
+
+    /**
      * Componentwise vector addition
      *
      * @param that vector to be added
@@ -46,8 +59,8 @@ public class Vector {
                 this.entries[i] = this.entries[i] + that.entries[i];
             }
         } else
-            throw new InputMismatchException("Dimension mismatch. Attempted to add vectors of different lengths: "
-                                            +this.length+" and "+that.length);
+            throw new IllegalArgumentException("Dimension mismatch. Attempted to add vectors of different lengths:\n"
+                    +this.length+" and "+that.length);
     }
 
     /**
@@ -62,6 +75,41 @@ public class Vector {
             result.entries[i] = this.entries[i] * k;
         }
         return result;
+    }
+
+    /**
+     * Vector dot product
+     * @param that second vector in the product
+     * @return dot product of this vector and the argument
+     */
+    public float dot(Vector that) {
+        if (this.length == that.length) {
+            float result = 0;
+            for (int i = 0; i < length; i++) {
+                result += this.entries[i] * that.entries[i];
+            }
+            return result;
+        } else
+            throw new IllegalArgumentException("Dimension mismatch. Attempted perform dot product on vectors of different lengths:\n"
+                    +this.length+" and "+that.length);
+    }
+
+    /**
+     * Vector dot product
+     * @param a first vector
+     * @param b second vector
+     * @return dot product
+     */
+    public static float dot(Vector a, Vector b) {
+        if (a.length == b.length) {
+            float result = 0;
+            for (int i = 0; i < a.length; i++) {
+                result += a.entries[i] * b.entries[i];
+            }
+            return result;
+        } else
+            throw new IllegalArgumentException("Dimension mismatch. Attempted perform dot product on vectors of different lengths:\n"
+                    +a.length+" and "+b.length);
     }
 
     public float getEntry(int index) {
